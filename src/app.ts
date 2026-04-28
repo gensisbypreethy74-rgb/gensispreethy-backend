@@ -14,7 +14,7 @@ const app: Application = express();
 // Security Middlewares
 app.use(helmet());
 app.use(cors({
-  origin: ENV.CORS_ORIGIN,
+  origin: true,
   credentials: true,
 }));
 
