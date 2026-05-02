@@ -6,6 +6,7 @@ export interface IOrder extends Document {
     product: mongoose.Types.ObjectId;
     quantity: number;
     price: number;
+    size?: string;
   }[];
   shippingAddress: {
     street: string;
@@ -36,6 +37,7 @@ const OrderSchema: Schema = new Schema(
         product: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
         quantity: { type: Number, required: true },
         price: { type: Number, required: true },
+        size: { type: String },
       },
     ],
     shippingAddress: {
