@@ -19,6 +19,7 @@ export const getDashboardStats = asyncHandler(async (req: Request, res: Response
     totalBanners,
     totalCoupons,
     totalTestimonials,
+    revenueResult,
   ] = await Promise.all([
     Order.countDocuments(),
     Order.find().populate('user', 'name email').sort({ createdAt: -1 }).limit(5),
@@ -28,13 +29,12 @@ export const getDashboardStats = asyncHandler(async (req: Request, res: Response
     Banner.countDocuments(),
     Coupon.countDocuments(),
     Testimonial.countDocuments(),
+    Order.aggregate([
+      { $match: { paymentStatus: 'completed' } },
+      { $group: { _id: null, total: { $sum: '$total' } } }
+    ]),
   ]);
 
-  // Calculate total revenue from shipped/delivered orders
-  const revenueResult = await Order.aggregate([
-    { $match: { orderStatus: { $in: ['shipped', 'delivered'] } } },
-    { $group: { _id: null, total: { $sum: '$total' } } }
-  ]);
   const totalRevenue = revenueResult.length > 0 ? revenueResult[0].total : 0;
 
   successResponse(res, 200, 'Dashboard stats fetched', {
