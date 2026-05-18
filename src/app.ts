@@ -57,8 +57,8 @@ app.use(cors(corsConfig));
 app.options("*", cors(corsConfig));
 
 // Body parsers with size limits
-app.use(express.json({ limit: '100kb' })); // Limit JSON body size
-app.use(express.urlencoded({ extended: true, limit: '100kb' })); // Limit URL-encoded body size
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
 
 // Sanitization middleware - prevent NoSQL injection and XSS
