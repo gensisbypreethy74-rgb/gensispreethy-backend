@@ -180,7 +180,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
                 </div>
               </div>
               <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #eaeaea;">
-                <p style="color: #9ca3af; font-size: 13px; margin: 0;">© ${new Date().getFullYear()} Heedy Luxury. All rights reserved.</p>
+                <p style="color: #9ca3af; font-size: 13px; margin: 0;">© ${new Date().getFullYear()} Heedy. All rights reserved.</p>
               </div>
             </div>
           `;
@@ -352,7 +352,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
                   Thank you for shopping with Heedy. If you have any questions, feel free to reply to this email.
                 </p>
                 <div style="text-align: center;">
-                  <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/profile" style="background-color: #111827; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">View Order History</a>
+                  <a href="${process.env.FRONTEND_URL || 'https://heedy-frontend.vercel.app'}/profile" style="background-color: #111827; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">View Order History</a>
                 </div>
               </div>
               <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #eaeaea;">
