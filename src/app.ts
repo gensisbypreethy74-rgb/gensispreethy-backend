@@ -33,7 +33,9 @@ app.use(helmet({
 }));
 
 // CORS configuration
-const allowedOrigins = process.env.CORS_ORIGIN?.split(",") || [];
+const allowedOrigins = process.env.CORS_ORIGIN
+  ?.split(",")
+  .map(o => o.trim()) || [];
 
 const corsConfig = {
   origin: function (origin: string | undefined, callback: any) {
@@ -52,6 +54,7 @@ const corsConfig = {
 };
 
 app.use(cors(corsConfig));
+app.options("*", cors(corsConfig));
 
 // Body parsers with size limits
 app.use(express.json({ limit: '100kb' })); // Limit JSON body size
