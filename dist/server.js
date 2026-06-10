@@ -6,10 +6,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const app_1 = __importDefault(require("./app"));
 const db_1 = require("./config/db");
 const env_1 = require("./config/env");
+const seedAdmin_1 = require("./utils/seedAdmin");
 const startServer = async () => {
     try {
         // Connect to database
         await (0, db_1.connectDB)();
+        // Ensure a default admin is available in development
+        await (0, seedAdmin_1.seedAdmin)();
         // Start Express Server
         app_1.default.listen(env_1.ENV.PORT, () => {
             console.log(`🚀 Server running in ${env_1.ENV.NODE_ENV} mode on port ${env_1.ENV.PORT}`);

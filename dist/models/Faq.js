@@ -33,27 +33,15 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Product = void 0;
+exports.Faq = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const variantSchema = new mongoose_1.Schema({
-    volume: { type: String, required: true },
-    price: { type: Number, required: true },
-    oldPrice: { type: Number },
+const faqSchema = new mongoose_1.Schema({
+    question: { type: String, required: true },
+    answer: { type: String, required: true },
+    isActive: { type: Boolean, default: true },
+    order: { type: Number, default: 0 }
+}, {
+    timestamps: true
 });
-const productSchema = new mongoose_1.Schema({
-    name: { type: String, required: true, trim: true },
-    category: { type: String, required: true },
-    description: { type: String, required: true },
-    variants: [variantSchema],
-    starRating: { type: Number, default: 0, min: 0, max: 5 },
-    reviewsCount: { type: Number, default: 0 },
-    offerText: { type: String },
-    keyFeatures: { type: String },
-    images: [{ type: String }],
-    status: { type: String, default: 'In Stock' },
-    showOnLandingPage: { type: Boolean, default: false },
-    stock: { type: Number, default: 0 },
-    weight: { type: Number, default: 0 },
-}, { timestamps: true });
-exports.Product = mongoose_1.default.model('Product', productSchema);
-//# sourceMappingURL=Product.js.map
+exports.Faq = mongoose_1.default.model('Faq', faqSchema);
+//# sourceMappingURL=Faq.js.map

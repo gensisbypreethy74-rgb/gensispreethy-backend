@@ -33,27 +33,15 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Product = void 0;
+exports.Settings = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const variantSchema = new mongoose_1.Schema({
-    volume: { type: String, required: true },
-    price: { type: Number, required: true },
-    oldPrice: { type: Number },
-});
-const productSchema = new mongoose_1.Schema({
-    name: { type: String, required: true, trim: true },
-    category: { type: String, required: true },
-    description: { type: String, required: true },
-    variants: [variantSchema],
-    starRating: { type: Number, default: 0, min: 0, max: 5 },
-    reviewsCount: { type: Number, default: 0 },
-    offerText: { type: String },
-    keyFeatures: { type: String },
-    images: [{ type: String }],
-    status: { type: String, default: 'In Stock' },
-    showOnLandingPage: { type: Boolean, default: false },
-    stock: { type: Number, default: 0 },
-    weight: { type: Number, default: 0 },
+const settingsSchema = new mongoose_1.Schema({
+    bannerText: { type: String, default: '' },
+    isBannerActive: { type: Boolean, default: false },
+    footerText: { type: String, default: '© 2026 Luxy Galleria. All rights reserved.' },
+    whatsappNumber: { type: String, default: '7012552969' },
+    primaryColor: { type: String, default: '#8B5E34' },
+    secondaryColor: { type: String, default: '#F5F1E8' },
 }, { timestamps: true });
-exports.Product = mongoose_1.default.model('Product', productSchema);
-//# sourceMappingURL=Product.js.map
+exports.Settings = mongoose_1.default.model('Settings', settingsSchema);
+//# sourceMappingURL=Settings.js.map

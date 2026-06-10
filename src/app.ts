@@ -34,8 +34,8 @@ app.use(helmet({
 
 // CORS configuration
 const allowedOrigins = process.env.CORS_ORIGIN
-  ?.split(",")
-  .map(o => o.trim()) || [];
+  ? process.env.CORS_ORIGIN.split(",").map(o => o.trim())
+  : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'];
 
 const corsConfig = {
   origin: function (origin: string | undefined, callback: any) {

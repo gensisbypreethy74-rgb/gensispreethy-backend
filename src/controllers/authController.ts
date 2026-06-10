@@ -58,21 +58,43 @@ export const loginAdmin = asyncHandler(async (req: Request, res: Response) => {
 
 // Helper to quickly create a test admin user (Can be removed later)
 export const createTestAdmin = asyncHandler(async (req: Request, res: Response) => {
-  const userExists = await User.findOne({ email: 'admin@heedy.com' });
+  if (ENV.NODE_ENV === 'production') {
+    return errorResponse(res, 403, 'Cannot create test admin in production');
+  }
+
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@luxygalleria.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'password123';
+  const userExists = await User.findOne({ email: adminEmail }).select('+password');
+
   if (userExists) {
-    return errorResponse(res, 400, 'Admin already exists');
+    if (userExists.role === 'admin' || userExists.role === 'superadmin') {
+      userExists.password = adminPassword;
+      userExists.role = 'superadmin';
+      userExists.isVerified = true;
+      userExists.isActive = true;
+      await userExists.save();
+
+      return successResponse(res, 200, 'Test admin reset successfully. You can now login.', {
+        email: adminEmail,
+        password: adminPassword
+      });
+    }
+
+    return errorResponse(res, 400, 'Email is already registered as a customer');
   }
 
   const admin = await User.create({
     name: 'System Admin',
-    email: 'admin@heedy.com',
-    password: 'password123',
-    role: 'superadmin'
+    email: adminEmail,
+    password: adminPassword,
+    role: 'superadmin',
+    isVerified: true,
+    isActive: true,
   });
 
   successResponse(res, 201, 'Test admin created successfully. You can now login.', {
     email: admin.email,
-    password: 'password123'
+    password: adminPassword
   });
 });
 
@@ -122,15 +144,25 @@ export const registerCustomer = asyncHandler(async (req: Request, res: Response)
 
   // Send OTP email
   const message = `Your email verification code is: ${otp}\n\nIt expires in 10 minutes.`;
-  await sendEmail({
-    email: user.email,
-    subject: 'Heedy - Verify your email',
-    message
-  });
+  
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: 'Luxy Galleria - Verify your email',
+      message
+    });
+  } catch (error) {
+    console.error('Email sending failed, but OTP is still valid:', error);
+  }
 
-  successResponse(res, 201, 'OTP sent to your email. Please verify to complete registration.', {
-    email: user.email,
-  });
+  // In development, return OTP in response for easy testing
+  const responseData: any = { email: user.email };
+  if (process.env.NODE_ENV === 'development') {
+    responseData.otp = otp; // Only in development!
+    console.log('\n🔐 DEVELOPMENT MODE - OTP:', otp, 'for', user.email, '\n');
+  }
+
+  successResponse(res, 201, 'OTP sent to your email. Please verify to complete registration.', responseData);
 });
 
 export const verifyOtp = asyncHandler(async (req: Request, res: Response) => {
@@ -210,13 +242,24 @@ export const resendOtp = asyncHandler(async (req: Request, res: Response) => {
 
   // Send OTP email
   const message = `Your new email verification code is: ${otp}\n\nIt expires in 10 minutes.`;
-  await sendEmail({
-    email: user.email,
-    subject: 'Heedy Luxury - Verify your email',
-    message
-  });
+  
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: 'Luxy Galleria - Verify your email',
+      message
+    });
+  } catch (error) {
+    console.error('Email sending failed, but OTP is still valid:', error);
+  }
 
-  successResponse(res, 200, 'A new OTP has been sent to your email', null);
+  // In development, return OTP in response for easy testing
+  const responseData: any = null;
+  if (process.env.NODE_ENV === 'development') {
+    console.log('\n🔐 DEVELOPMENT MODE - NEW OTP:', otp, 'for', user.email, '\n');
+  }
+
+  successResponse(res, 200, 'A new OTP has been sent to your email', responseData);
 });
 
 export const loginCustomer = asyncHandler(async (req: Request, res: Response) => {

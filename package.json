@@ -1,7 +1,7 @@
 {
-  "name": "heedy-backend",
+  "name": "luxygalleria-backend",
   "version": "1.0.0",
-  "description": "Professional backend for Heedy admin dashboard",
+  "description": "Professional backend for Luxy Galleria e-commerce platform",
   "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",

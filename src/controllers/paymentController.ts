@@ -18,11 +18,25 @@ export const createOrder = async (req: Request, res: Response) => {
   try {
     const { total } = req.body;
 
+    if (typeof total !== 'number' || Number.isNaN(total) || total <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid order total. Please refresh and try again.' });
+    }
+
     let razorpayOrder;
     let isMock = false;
 
-    // Razorpay requires minimum ₹1 (100 paise)
-    if (!process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === 'dummy_key_id' || total < 1) {
+    const missingRazorpayConfig = 
+      !process.env.RAZORPAY_KEY_ID || 
+      process.env.RAZORPAY_KEY_ID === 'dummy_key_id' || 
+      process.env.RAZORPAY_KEY_ID === 'YOUR_RAZORPAY_KEY_ID' ||
+      process.env.RAZORPAY_KEY_ID.startsWith('rzp_test_Luxy') || // Our placeholder test keys
+      !process.env.RAZORPAY_KEY_SECRET || 
+      process.env.RAZORPAY_KEY_SECRET === 'dummy_key_secret' ||
+      process.env.RAZORPAY_KEY_SECRET === 'YOUR_RAZORPAY_KEY_SECRET' ||
+      process.env.RAZORPAY_KEY_SECRET.startsWith('LuxySecret'); // Our placeholder secret
+
+    // Use mock order in development or when Razorpay credentials are missing
+    if (missingRazorpayConfig || total < 1) {
       razorpayOrder = {
         id: `mock_order_${Date.now()}`,
         amount: Math.round(total * 100),
@@ -44,7 +58,7 @@ export const createOrder = async (req: Request, res: Response) => {
       data: {
         razorpayOrder,
         isMock,
-        key_id: process.env.RAZORPAY_KEY_ID // Return the key used to generate the order to prevent mismatch
+        key_id: process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_YourTestKey' // Return the key used to generate the order to prevent mismatch
       }
     });
 
@@ -69,6 +83,19 @@ export const verifyPayment = async (req: Request, res: Response) => {
       total,
     } = req.body;
 
+    // Validate required fields
+    if (!razorpay_order_id || !razorpay_payment_id) {
+      return res.status(400).json({ success: false, message: 'Missing payment details' });
+    }
+
+    if (!items || items.length === 0) {
+      return res.status(400).json({ success: false, message: 'No items in order' });
+    }
+
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ success: false, message: 'User not authenticated' });
+    }
+
     let paymentVerified = false;
 
     if (razorpay_payment_id === 'mock_payment') {
@@ -85,12 +112,12 @@ export const verifyPayment = async (req: Request, res: Response) => {
     if (paymentVerified) {
       // Payment confirmed — 
       const newOrder = new Order({
-        user: req.user?._id,
+        user: req.user._id,
         items,
         shippingAddress,
         subtotal,
-        discount,
-        shippingFee,
+        discount: discount || 0,
+        shippingFee: shippingFee || 0,
         total,
         paymentMethod: 'razorpay',
         paymentStatus: 'completed',
@@ -103,14 +130,22 @@ export const verifyPayment = async (req: Request, res: Response) => {
       await newOrder.save();
       await newOrder.populate('items.product', 'name images variants');
 
+      // Reduce stock for each product
+      try {
+        for (const item of items) {
+          const product = await Product.findById(item.product);
+          if (product) {
+            product.stock = Math.max(0, (product.stock || 0) - item.quantity);
+            await product.save();
+          }
+        }
+      } catch (stockErr) {
+        console.error('Error reducing stock:', stockErr);
+      }
+
       // Send Order Confirmation Email
       try {
-        console.log('--- Order Confirmation Email Debug ---');
-        console.log('Is req.user present?', !!req.user);
-        console.log('What is req.user.email?', req.user?.email);
-
         if (req.user && req.user.email) {
-          console.log('Preparing to send order confirmation email to:', req.user.email);
           const autoLoginToken = jwt.sign({ id: req.user._id, role: (req.user as any).role || 'customer' }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
 
           const itemsHtml = newOrder.items.map((item: any) => {
@@ -131,7 +166,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
           const htmlMessage = `
             <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 10px; overflow: hidden; background-color: #ffffff;">
               <div style="background-color: #111827; padding: 30px; text-align: center;">
-                <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase;">Heedy</h1>
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase;">Luxy Galleria</h1>
               </div>
               <div style="padding: 40px 30px;">
                 <h2 style="color: #111827; font-size: 20px; margin-top: 0; margin-bottom: 20px;">Order Confirmation</h2>
@@ -141,7 +176,7 @@ export const verifyPayment = async (req: Request, res: Response) => {
                 </p>
                 <div style="background-color: #f9fafb; border: 1px solid #f3f4f6; border-radius: 8px; padding: 20px; margin-bottom: 30px; text-align: center;">
                   <p style="margin: 0 0 10px 0; color: #374151; font-size: 15px;"><strong>Order ID:</strong> <span style="color: #111827;">${newOrder._id}</span></p>
-                  <p style="margin: 0 0 10px 0; color: #374151; font-size: 15px;"><strong>Order Date:</strong> <span style="color: #111827;">${String(newOrder.createdAt?.getDate() || new Date().getDate()).padStart(2, '0')}/${String((newOrder.createdAt?.getMonth() || new Date().getMonth()) + 1).padStart(2, '0')}/${newOrder.createdAt?.getFullYear() || new Date().getFullYear()}</span></p>
+                  <p style="margin: 0 0 10px 0; color: #374151; font-size: 15px;"><strong>Order Date:</strong> <span style="color: #111827;">${String(new Date(newOrder.createdAt).getDate()).padStart(2, '0')}/${String(new Date(newOrder.createdAt).getMonth() + 1).padStart(2, '0')}/${new Date(newOrder.createdAt).getFullYear()}</span></p>
                 </div>
 
                 <h3 style="color: #111827; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px;">Order Details</h3>
@@ -178,25 +213,23 @@ export const verifyPayment = async (req: Request, res: Response) => {
                   We will send you another email once your order has been shipped. If you have any questions, feel free to reply to this email.
                 </p>
                 <div style="text-align: center;">
-                  <a href="${process.env.FRONTEND_URL || 'https://heedy-frontend.vercel.app'}/profile?token=${autoLoginToken}" style="background-color: #111827; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">View Order Details</a>
+                  <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/profile?token=${autoLoginToken}" style="background-color: #111827; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">View Order Details</a>
                 </div>
               </div>
               <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #eaeaea;">
-                <p style="color: #9ca3af; font-size: 13px; margin: 0;">© ${new Date().getFullYear()} Heedy. All rights reserved.</p>
+                <p style="color: #9ca3af; font-size: 13px; margin: 0;">© ${new Date().getFullYear()} Luxy Galleria. All rights reserved.</p>
               </div>
             </div>
           `;
           await sendEmail({
             email: req.user.email,
-            subject: 'Order Confirmation - Heedy',
+            subject: 'Order Confirmation - Luxy Galleria',
             html: htmlMessage
           });
-          console.log('Order confirmation email process completed without throwing errors.');
-        } else {
-          console.log('Skipping email send because user or user.email is missing.');
         }
       } catch (emailErr) {
         console.error('Error sending confirmation email:', emailErr);
+        // Don't fail the order if email fails
       }
 
       res.status(200).json({
@@ -266,24 +299,24 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         const autoLoginToken = jwt.sign({ id: user._id, role: user.role || 'customer' }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
         let statusColor = '#3b82f6'; // default blue
         let statusMessage = "There is an update regarding your recent order.";
-        let subject = `Order Status Update - Heedy`;
+        let subject = `Order Status Update - Luxy Galleria`;
 
         if (orderStatus === 'processing') {
           statusColor = '#f59e0b'; // orange
           statusMessage = "Your order has been placed successfully and is now being processed.";
-          subject = `Order Placed - Heedy`;
+          subject = `Order Placed - Luxy Galleria`;
         } else if (orderStatus === 'shipped') {
           statusColor = '#3b82f6'; // blue
           statusMessage = "Great news! Your order has been shipped and is on its way to you.";
-          subject = `Order Shipped - Heedy`;
+          subject = `Order Shipped - Luxy Galleria`;
         } else if (orderStatus === 'delivered') {
           statusColor = '#10b981'; // green
           statusMessage = "Your order has been delivered successfully. We hope you enjoy your purchase!";
-          subject = `Order Delivered - Heedy`;
+          subject = `Order Delivered - Luxy Galleria`;
         } else if (orderStatus === 'cancelled') {
           statusColor = '#ef4444'; // red
           statusMessage = "Your order has been cancelled. If you have been charged, a refund will be initiated shortly.";
-          subject = `Order Cancelled - Heedy`;
+          subject = `Order Cancelled - Luxy Galleria`;
         }
 
         const itemsHtml = order.items.map((item: any) => {
@@ -304,7 +337,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         const htmlMessage = `
             <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 10px; overflow: hidden; background-color: #ffffff;">
               <div style="background-color: #111827; padding: 30px; text-align: center;">
-                <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase;">Heedy</h1>
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase;">Luxy Galleria</h1>
               </div>
               <div style="padding: 40px 30px;">
                 <h2 style="color: #111827; font-size: 20px; margin-top: 0; margin-bottom: 20px;">Order Status Update</h2>
@@ -352,14 +385,14 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
                 </div>
 
                 <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 30px;">
-                  Thank you for shopping with Heedy. If you have any questions, feel free to reply to this email.
+                  Thank you for shopping with Luxy Galleria. If you have any questions, feel free to reply to this email.
                 </p>
                 <div style="text-align: center;">
-                  <a href="${process.env.FRONTEND_URL || 'https://heedy-frontend.vercel.app'}/profile?token=${autoLoginToken}" style="background-color: #111827; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">View Order History</a>
+                  <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/profile?token=${autoLoginToken}" style="background-color: #111827; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">View Order History</a>
                 </div>
               </div>
               <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #eaeaea;">
-                <p style="color: #9ca3af; font-size: 13px; margin: 0;">© ${new Date().getFullYear()} Heedy Luxury. All rights reserved.</p>
+                <p style="color: #9ca3af; font-size: 13px; margin: 0;">© ${new Date().getFullYear()} Luxy Galleria. All rights reserved.</p>
               </div>
             </div>
         `;

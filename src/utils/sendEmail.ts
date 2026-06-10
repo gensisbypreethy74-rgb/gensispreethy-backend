@@ -28,16 +28,32 @@ initSendGrid();
  */
 export const sendEmail = async (options: EmailOptions): Promise<any> => {
   // Use SENDGRID_FROM_EMAIL if set, otherwise fallback or error
-  const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@heedy.com';
-  const fromName = process.env.FROM_NAME || 'Heedy';
+  const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@luxygalleria.com';
+  const fromName = process.env.FROM_NAME || 'Luxy Galleria';
 
   // Validate email address
   if (!options.email || !options.email.includes('@')) {
     throw new Error('Invalid recipient email address');
   }
 
+  // If SendGrid is not configured, log to console instead (for development)
   if (!process.env.SENDGRID_API_KEY) {
-    throw new Error('SENDGRID_API_KEY is not configured');
+    console.log('\n==========================================');
+    console.log('📧 EMAIL (SendGrid not configured - Development Mode)');
+    console.log('==========================================');
+    console.log('To:', options.email);
+    console.log('From:', `${fromName} <${fromEmail}>`);
+    console.log('Subject:', options.subject);
+    console.log('------------------------------------------');
+    console.log('Message:');
+    console.log(options.message || options.html || 'No content');
+    console.log('==========================================\n');
+    
+    return {
+      success: true,
+      provider: 'console',
+      note: 'Email logged to console (SendGrid not configured)'
+    };
   }
 
   const msg: any = {

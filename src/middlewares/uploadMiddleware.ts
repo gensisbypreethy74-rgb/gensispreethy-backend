@@ -1,6 +1,8 @@
 import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import path from 'path';
+import fs from 'fs';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -9,16 +11,45 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: async (req, file) => {
-    return {
-      folder: 'heedy_products',
-      allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-      public_id: file.fieldname + '-' + Date.now(),
-    };
-  },
-});
+// Check if Cloudinary is properly configured
+const isCloudinaryConfigured = 
+  process.env.CLOUDINARY_CLOUD_NAME && 
+  process.env.CLOUDINARY_API_KEY && 
+  process.env.CLOUDINARY_API_SECRET &&
+  process.env.CLOUDINARY_CLOUD_NAME !== 'dummy_cloud' &&
+  process.env.CLOUDINARY_API_KEY !== 'dummy_api_key';
+
+let storage: multer.StorageEngine;
+
+if (isCloudinaryConfigured) {
+  // Use Cloudinary storage when properly configured
+  storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: async (req, file) => {
+      return {
+        folder: 'luxygalleria_products', // Changed from heedy to luxy
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+        public_id: file.fieldname + '-' + Date.now(),
+      };
+    },
+  });
+} else {
+  // Use local storage when Cloudinary is not configured
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+
+  storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, uploadsDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    },
+  });
+}
 
 export const upload = multer({ 
   storage: storage,

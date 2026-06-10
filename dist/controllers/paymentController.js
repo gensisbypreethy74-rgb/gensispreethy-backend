@@ -7,8 +7,10 @@ exports.updateOrderStatus = exports.getAllOrders = exports.getMyOrders = exports
 const razorpay_1 = __importDefault(require("razorpay"));
 const crypto_1 = __importDefault(require("crypto"));
 const Order_1 = __importDefault(require("../models/Order"));
+const Product_1 = require("../models/Product");
 const sendEmail_1 = require("../utils/sendEmail");
 const dotenv_1 = __importDefault(require("dotenv"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 dotenv_1.default.config();
 const razorpayInstance = new razorpay_1.default({
     key_id: process.env.RAZORPAY_KEY_ID || 'dummy_key_id',
@@ -18,10 +20,14 @@ const razorpayInstance = new razorpay_1.default({
 const createOrder = async (req, res) => {
     try {
         const { total } = req.body;
+        if (typeof total !== 'number' || Number.isNaN(total) || total <= 0) {
+            return res.status(400).json({ success: false, message: 'Invalid order total. Please refresh and try again.' });
+        }
         let razorpayOrder;
         let isMock = false;
-        // Razorpay requires minimum ₹1 (100 paise)
-        if (!process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === 'dummy_key_id' || total < 1) {
+        const missingRazorpayConfig = !process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === 'dummy_key_id' || !process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET === 'dummy_key_secret';
+        // Use mock order in development or when Razorpay credentials are missing
+        if (missingRazorpayConfig || total < 1) {
             razorpayOrder = {
                 id: `mock_order_${Date.now()}`,
                 amount: Math.round(total * 100),
@@ -43,7 +49,7 @@ const createOrder = async (req, res) => {
             data: {
                 razorpayOrder,
                 isMock,
-                key_id: process.env.RAZORPAY_KEY_ID // Return the key used to generate the order to prevent mismatch
+                key_id: process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_YourTestKey' // Return the key used to generate the order to prevent mismatch
             }
         });
     }
@@ -70,7 +76,7 @@ const verifyPayment = async (req, res) => {
             paymentVerified = razorpay_signature === expectedSign;
         }
         if (paymentVerified) {
-            // Payment confirmed — NOW save order to DB
+            // Payment confirmed — 
             const newOrder = new Order_1.default({
                 user: req.user?._id,
                 items,
@@ -88,6 +94,19 @@ const verifyPayment = async (req, res) => {
             });
             await newOrder.save();
             await newOrder.populate('items.product', 'name images variants');
+            // Reduce stock for each product
+            try {
+                for (const item of items) {
+                    const product = await Product_1.Product.findById(item.product);
+                    if (product) {
+                        product.stock = Math.max(0, (product.stock || 0) - item.quantity);
+                        await product.save();
+                    }
+                }
+            }
+            catch (stockErr) {
+                console.error('Error reducing stock:', stockErr);
+            }
             // Send Order Confirmation Email
             try {
                 console.log('--- Order Confirmation Email Debug ---');
@@ -95,6 +114,7 @@ const verifyPayment = async (req, res) => {
                 console.log('What is req.user.email?', req.user?.email);
                 if (req.user && req.user.email) {
                     console.log('Preparing to send order confirmation email to:', req.user.email);
+                    const autoLoginToken = jsonwebtoken_1.default.sign({ id: req.user._id, role: req.user.role || 'customer' }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
                     const itemsHtml = newOrder.items.map((item) => {
                         const product = item.product;
                         return `
@@ -159,11 +179,11 @@ const verifyPayment = async (req, res) => {
                   We will send you another email once your order has been shipped. If you have any questions, feel free to reply to this email.
                 </p>
                 <div style="text-align: center;">
-                  <a href="${process.env.FRONTEND_URL || 'https://heedy-frontend.vercel.app'}/profile" style="background-color: #111827; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">View Order Details</a>
+                  <a href="${process.env.FRONTEND_URL || 'https://heedy-frontend.vercel.app'}/profile?token=${autoLoginToken}" style="background-color: #111827; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">View Order Details</a>
                 </div>
               </div>
               <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #eaeaea;">
-                <p style="color: #9ca3af; font-size: 13px; margin: 0;">© ${new Date().getFullYear()} Heedy Luxury. All rights reserved.</p>
+                <p style="color: #9ca3af; font-size: 13px; margin: 0;">© ${new Date().getFullYear()} Heedy. All rights reserved.</p>
               </div>
             </div>
           `;
@@ -240,6 +260,7 @@ const updateOrderStatus = async (req, res) => {
         try {
             const user = order.user;
             if (user && user.email) {
+                const autoLoginToken = jsonwebtoken_1.default.sign({ id: user._id, role: user.role || 'customer' }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
                 let statusColor = '#3b82f6'; // default blue
                 let statusMessage = "There is an update regarding your recent order.";
                 let subject = `Order Status Update - Heedy`;
@@ -331,7 +352,7 @@ const updateOrderStatus = async (req, res) => {
                   Thank you for shopping with Heedy. If you have any questions, feel free to reply to this email.
                 </p>
                 <div style="text-align: center;">
-                  <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/profile" style="background-color: #111827; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">View Order History</a>
+                  <a href="${process.env.FRONTEND_URL || 'https://heedy-frontend.vercel.app'}/profile?token=${autoLoginToken}" style="background-color: #111827; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">View Order History</a>
                 </div>
               </div>
               <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #eaeaea;">
