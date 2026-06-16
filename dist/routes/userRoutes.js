@@ -19,5 +19,6 @@ router.route('/addresses/:addressId')
 // Admin routes
 router.get('/admin/customers', authMiddleware_1.protect, (0, authMiddleware_1.authorize)('admin', 'superadmin'), userController_1.getAllCustomers);
 router.put('/admin/customers/:id/toggle-status', authMiddleware_1.protect, (0, authMiddleware_1.authorize)('admin', 'superadmin'), userController_1.toggleCustomerStatus);
+router.delete('/admin/customers/:id', authMiddleware_1.protect, (0, authMiddleware_1.authorize)('admin', 'superadmin'), userController_1.deleteCustomer);
 exports.default = router;
 //# sourceMappingURL=userRoutes.js.map

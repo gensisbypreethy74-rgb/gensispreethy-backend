@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.toggleCustomerStatus = exports.getAllCustomers = exports.editAddress = exports.deleteAddress = exports.addAddress = exports.updateProfile = exports.getAddresses = exports.getProfile = void 0;
+exports.toggleCustomerStatus = exports.getAllCustomers = exports.editAddress = exports.deleteCustomer = exports.deleteAddress = exports.addAddress = exports.updateProfile = exports.getAddresses = exports.getProfile = void 0;
 const User_1 = require("../models/User");
 const asyncHandler_1 = require("../utils/asyncHandler");
 const responseHandler_1 = require("../utils/responseHandler");
@@ -66,6 +66,20 @@ exports.deleteAddress = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     user.addresses = (user.addresses || []).filter((addr) => addr._id?.toString() !== addressId);
     await user.save();
     (0, responseHandler_1.successResponse)(res, 200, 'Address removed successfully', user.addresses);
+});
+// Delete Customer (Admin only)
+exports.deleteCustomer = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
+    const { id } = req.params;
+    const customer = await User_1.User.findById(id);
+    if (!customer) {
+        return (0, responseHandler_1.errorResponse)(res, 404, 'Customer not found');
+    }
+    // Prevent deleting admin users
+    if (customer.role === 'admin' || customer.role === 'superadmin') {
+        return (0, responseHandler_1.errorResponse)(res, 403, 'Cannot delete admin users');
+    }
+    await User_1.User.findByIdAndDelete(id);
+    (0, responseHandler_1.successResponse)(res, 200, 'Customer deleted successfully', null);
 });
 // Edit Address
 exports.editAddress = (0, asyncHandler_1.asyncHandler)(async (req, res) => {

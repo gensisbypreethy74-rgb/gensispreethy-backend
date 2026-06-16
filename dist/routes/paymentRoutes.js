@@ -13,5 +13,6 @@ router.get('/myorders', authMiddleware_1.protect, paymentController_1.getMyOrder
 // Admin routes
 router.get('/admin/orders', authMiddleware_1.protect, (0, authMiddleware_1.authorize)('admin', 'superadmin'), paymentController_1.getAllOrders);
 router.put('/admin/orders/:id/status', authMiddleware_1.protect, (0, authMiddleware_1.authorize)('admin', 'superadmin'), paymentController_1.updateOrderStatus);
+router.delete('/admin/orders/:id', authMiddleware_1.protect, (0, authMiddleware_1.authorize)('admin', 'superadmin'), paymentController_1.deleteOrder);
 exports.default = router;
 //# sourceMappingURL=paymentRoutes.js.map

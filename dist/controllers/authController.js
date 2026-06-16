@@ -123,25 +123,41 @@ exports.registerCustomer = (0, asyncHandler_1.asyncHandler)(async (req, res) => 
         user.otpExpires = otpExpires;
         await user.save();
     }
-    // Send OTP email
-    const message = `Your email verification code is: ${otp}\n\nIt expires in 10 minutes.`;
+    // Send OTP via email
     try {
+        const emailSubject = 'Your Luxy Galleria Verification Code';
+        const emailMessage = `Your verification code is: ${otp}\n\nThis code will expire in 10 minutes.`;
+        const emailHTML = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #0A192F; margin-bottom: 20px;">Welcome to Luxy Galleria!</h2>
+        <p style="color: #333; font-size: 16px; margin-bottom: 20px;">Hi <strong>${name}</strong>,</p>
+        <p style="color: #333; font-size: 16px; margin-bottom: 20px;">Your email verification code is:</p>
+        <div style="background-color: #FEF3C7; border: 2px solid #FCD34D; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px;">
+          <p style="font-size: 32px; font-weight: bold; color: #0A192F; letter-spacing: 4px; margin: 0;">${otp}</p>
+        </div>
+        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">This code will expire in <strong>10 minutes</strong>.</p>
+        <p style="color: #999; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+          If you didn't request this code, please ignore this email.
+        </p>
+      </div>
+    `;
         await (0, sendEmail_1.sendEmail)({
-            email: user.email,
-            subject: 'Luxy Galleria - Verify your email',
-            message
+            email,
+            subject: emailSubject,
+            message: emailMessage,
+            html: emailHTML
         });
+        console.log('\n✅ OTP Email sent to:', email, 'OTP:', otp, '\n');
     }
-    catch (error) {
-        console.error('Email sending failed, but OTP is still valid:', error);
+    catch (emailError) {
+        console.error('⚠️ Failed to send OTP email:', emailError.message);
+        // Don't fail registration if email sending fails - continue anyway
+        console.log('\n✅ OTP:', otp, 'for', user.email, '(Email sending failed but OTP generated)\n');
     }
-    // In development, return OTP in response for easy testing
-    const responseData = { email: user.email };
-    if (process.env.NODE_ENV === 'development') {
-        responseData.otp = otp; // Only in development!
-        console.log('\n🔐 DEVELOPMENT MODE - OTP:', otp, 'for', user.email, '\n');
-    }
-    (0, responseHandler_1.successResponse)(res, 201, 'OTP sent to your email. Please verify to complete registration.', responseData);
+    (0, responseHandler_1.successResponse)(res, 201, 'Verification code generated. Please verify to complete registration.', {
+        email: user.email,
+        otp
+    });
 });
 exports.verifyOtp = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const { email, otp } = req.body;
@@ -200,24 +216,40 @@ exports.resendOtp = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     user.otp = otp;
     user.otpExpires = otpExpires;
     await user.save();
-    // Send OTP email
-    const message = `Your new email verification code is: ${otp}\n\nIt expires in 10 minutes.`;
+    // Send OTP via email
     try {
+        const emailSubject = 'Your New Luxy Galleria Verification Code';
+        const emailMessage = `Your new verification code is: ${otp}\n\nThis code will expire in 10 minutes.`;
+        const emailHTML = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #0A192F; margin-bottom: 20px;">Luxy Galleria - Verification Code</h2>
+        <p style="color: #333; font-size: 16px; margin-bottom: 20px;">Hi <strong>${user.name}</strong>,</p>
+        <p style="color: #333; font-size: 16px; margin-bottom: 20px;">Your new email verification code is:</p>
+        <div style="background-color: #FEF3C7; border: 2px solid #FCD34D; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px;">
+          <p style="font-size: 32px; font-weight: bold; color: #0A192F; letter-spacing: 4px; margin: 0;">${otp}</p>
+        </div>
+        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">This code will expire in <strong>10 minutes</strong>.</p>
+        <p style="color: #999; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+          If you didn't request this code, please ignore this email.
+        </p>
+      </div>
+    `;
         await (0, sendEmail_1.sendEmail)({
-            email: user.email,
-            subject: 'Luxy Galleria - Verify your email',
-            message
+            email,
+            subject: emailSubject,
+            message: emailMessage,
+            html: emailHTML
         });
+        console.log('\n✅ New OTP Email sent to:', email, 'OTP:', otp, '\n');
     }
-    catch (error) {
-        console.error('Email sending failed, but OTP is still valid:', error);
+    catch (emailError) {
+        console.error('⚠️ Failed to send OTP email:', emailError.message);
+        // Don't fail if email sending fails - continue anyway
+        console.log('\n✅ NEW OTP:', otp, 'for', user.email, '(Email sending failed but OTP generated)\n');
     }
-    // In development, return OTP in response for easy testing
-    const responseData = null;
-    if (process.env.NODE_ENV === 'development') {
-        console.log('\n🔐 DEVELOPMENT MODE - NEW OTP:', otp, 'for', user.email, '\n');
-    }
-    (0, responseHandler_1.successResponse)(res, 200, 'A new OTP has been sent to your email', responseData);
+    (0, responseHandler_1.successResponse)(res, 200, 'New verification code generated and sent to your email.', {
+        otp
+    });
 });
 exports.loginCustomer = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const { email, password } = req.body;

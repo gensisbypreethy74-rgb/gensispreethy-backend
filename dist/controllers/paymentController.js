@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateOrderStatus = exports.getAllOrders = exports.getMyOrders = exports.verifyPayment = exports.createOrder = void 0;
+exports.deleteOrder = exports.updateOrderStatus = exports.getAllOrders = exports.getMyOrders = exports.verifyPayment = exports.createOrder = void 0;
 const razorpay_1 = __importDefault(require("razorpay"));
 const crypto_1 = __importDefault(require("crypto"));
 const Order_1 = __importDefault(require("../models/Order"));
@@ -391,4 +391,21 @@ const updateOrderStatus = async (req, res) => {
     }
 };
 exports.updateOrderStatus = updateOrderStatus;
+// Delete Order (Admin only)
+const deleteOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const order = await Order_1.default.findById(id);
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+        await Order_1.default.findByIdAndDelete(id);
+        res.status(200).json({ success: true, message: 'Order deleted successfully', data: null });
+    }
+    catch (error) {
+        console.error('Error deleting order:', error);
+        res.status(500).json({ success: false, message: error.message || 'Error deleting order' });
+    }
+};
+exports.deleteOrder = deleteOrder;
 //# sourceMappingURL=paymentController.js.map

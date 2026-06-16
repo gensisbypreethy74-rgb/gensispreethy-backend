@@ -60,3 +60,5 @@
 {"level":"warn","message":"CORS blocked request from origin: http://localhost:3003","service":"luxygalleria-backend","timestamp":"2026-06-09 17:40:54"}
 {"level":"warn","message":"CORS blocked request from origin: http://localhost:3003","service":"luxygalleria-backend","timestamp":"2026-06-09 17:40:54"}
 {"level":"warn","message":"CORS blocked request from origin: http://localhost:3003","service":"luxygalleria-backend","timestamp":"2026-06-09 17:40:54"}
+{"level":"warn","message":"CORS blocked request from origin: http://localhost:3000","service":"luxygalleria-backend","timestamp":"2026-06-13 10:45:18"}
+{"level":"warn","message":"CORS blocked request from origin: http://localhost:3000","service":"luxygalleria-backend","timestamp":"2026-06-13 10:45:18"}

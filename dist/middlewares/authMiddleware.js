@@ -33,6 +33,7 @@ exports.protect = (0, asyncHandler_1.asyncHandler)(async (req, res, next) => {
         next();
     }
     catch (error) {
+        console.error('Token verification failed:', error.message);
         return (0, responseHandler_1.errorResponse)(res, 401, 'Not authorized, token failed');
     }
 });
