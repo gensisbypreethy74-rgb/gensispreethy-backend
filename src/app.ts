@@ -75,6 +75,24 @@ const corsConfig = {
 app.use(cors(corsConfig));
 app.options("*", cors(corsConfig));
 
+// Health Check Route (for monitoring and Render wake-up)
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Luxy Galleria Backend is running ✅',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  });
+});
+
+app.get('/api/v1/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Backend is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Body parsers with size limits
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
