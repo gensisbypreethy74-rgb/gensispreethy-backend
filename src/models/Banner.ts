@@ -10,9 +10,9 @@ export interface IBanner extends Document {
 
 const bannerSchema = new Schema<IBanner>(
   {
-    title: { type: String, required: true, trim: true },
-    description: { type: String, required: true },
-    image: { type: String, required: true },
+    title: { type: String, trim: true },
+    description: { type: String },
+    image: { type: String },
     mobileImage: { type: String },
     status: { type: String, default: 'ACTIVE' },
   },
