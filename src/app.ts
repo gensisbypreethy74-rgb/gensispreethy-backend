@@ -16,6 +16,9 @@ import logger from './utils/logger';
 
 const app: Application = express();
 
+// Trust proxy for rate limiting behind reverse proxies (Render, Vercel, etc.)
+app.set('trust proxy', 1);
+
 // Security Middlewares
 // Helmet - sets various HTTP headers for security
 app.use(helmet({

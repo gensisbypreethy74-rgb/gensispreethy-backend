@@ -18,6 +18,8 @@ const sanitize_1 = require("./middlewares/sanitize");
 const rateLimiter_1 = require("./middlewares/rateLimiter");
 const logger_1 = __importDefault(require("./utils/logger"));
 const app = (0, express_1.default)();
+// Trust proxy for rate limiting behind reverse proxies (Render, Vercel, etc.)
+app.set('trust proxy', 1);
 // Security Middlewares
 // Helmet - sets various HTTP headers for security
 app.use((0, helmet_1.default)({
