@@ -9,7 +9,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const seedBanners = async () => {
     try {
-        const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/luxy-galleria';
+        const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/luxy-galleria';
         await mongoose_1.default.connect(mongoUri);
         console.log('✅ Connected to MongoDB');
         // Clear old banners

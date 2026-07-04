@@ -28,8 +28,8 @@ if (isCloudinaryConfigured) {
         cloudinary: cloudinary_1.v2,
         params: async (req, file) => {
             return {
-                folder: 'luxygalleria_products', // Changed from heedy to luxy
-                allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+                folder: 'genesis_boutique_products', // Cloudinary folder name
+                allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'avif'],
                 public_id: file.fieldname + '-' + Date.now(),
             };
         },
@@ -51,8 +51,76 @@ else {
         },
     });
 }
-exports.upload = (0, multer_1.default)({
+const multerUpload = (0, multer_1.default)({
     storage: storage,
     limits: { fileSize: 15 * 1024 * 1024 } // 15MB limit
 });
+exports.upload = {
+    single: (fieldname) => {
+        const original = multerUpload.single(fieldname);
+        return (req, res, next) => {
+            original(req, res, (err) => {
+                if (err)
+                    return next(err);
+                if (req.file && !req.file.path.startsWith('http')) {
+                    req.file.path = '/uploads/' + req.file.filename;
+                }
+                next();
+            });
+        };
+    },
+    array: (fieldname, maxCount) => {
+        const original = multerUpload.array(fieldname, maxCount);
+        return (req, res, next) => {
+            original(req, res, (err) => {
+                if (err)
+                    return next(err);
+                if (req.files && Array.isArray(req.files)) {
+                    req.files.forEach((file) => {
+                        if (!file.path.startsWith('http')) {
+                            file.path = '/uploads/' + file.filename;
+                        }
+                    });
+                }
+                next();
+            });
+        };
+    },
+    fields: (fields) => {
+        const original = multerUpload.fields(fields);
+        return (req, res, next) => {
+            original(req, res, (err) => {
+                if (err)
+                    return next(err);
+                if (req.files && !Array.isArray(req.files)) {
+                    Object.keys(req.files).forEach((key) => {
+                        req.files[key].forEach((file) => {
+                            if (!file.path.startsWith('http')) {
+                                file.path = '/uploads/' + file.filename;
+                            }
+                        });
+                    });
+                }
+                next();
+            });
+        };
+    },
+    any: () => {
+        const original = multerUpload.any();
+        return (req, res, next) => {
+            original(req, res, (err) => {
+                if (err)
+                    return next(err);
+                if (req.files && Array.isArray(req.files)) {
+                    req.files.forEach((file) => {
+                        if (!file.path.startsWith('http')) {
+                            file.path = '/uploads/' + file.filename;
+                        }
+                    });
+                }
+                next();
+            });
+        };
+    }
+};
 //# sourceMappingURL=uploadMiddleware.js.map

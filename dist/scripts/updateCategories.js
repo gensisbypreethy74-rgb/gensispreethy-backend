@@ -10,7 +10,7 @@ dotenv_1.default.config();
 const updateCategories = async () => {
     try {
         // Connect to MongoDB
-        const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/luxy-db';
+        const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/luxy-db';
         await mongoose_1.default.connect(mongoUri);
         console.log('✅ Connected to MongoDB');
         // Update categories

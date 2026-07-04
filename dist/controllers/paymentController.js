@@ -67,12 +67,13 @@ const createOrder = async (req, res) => {
         const aboveCharge = settings.shippingAbove500g ?? 80;
         let calculatedShipping = 0;
         if (calculatedSubtotal > 0) {
+            let totalWeight = 0;
             for (const item of items) {
                 const product = await Product_1.Product.findById(item.product);
                 const weight = product?.weight || 0;
-                const itemShipping = weight >= threshold ? aboveCharge : belowCharge;
-                calculatedShipping += itemShipping * item.quantity;
+                totalWeight += weight * item.quantity;
             }
+            calculatedShipping = totalWeight >= threshold ? aboveCharge : belowCharge;
         }
         const calculatedTotal = calculatedSubtotal + calculatedShipping;
         // Allow a small margin of error (e.g. 1 INR) for rounding differences
@@ -179,12 +180,13 @@ const verifyPayment = async (req, res) => {
         const aboveCharge = settings.shippingAbove500g ?? 80;
         let calculatedShipping = 0;
         if (calculatedSubtotal > 0) {
+            let totalWeight = 0;
             for (const item of items) {
                 const product = await Product_1.Product.findById(item.product);
                 const weight = product?.weight || 0;
-                const itemShipping = weight >= threshold ? aboveCharge : belowCharge;
-                calculatedShipping += itemShipping * item.quantity;
+                totalWeight += weight * item.quantity;
             }
+            calculatedShipping = totalWeight >= threshold ? aboveCharge : belowCharge;
         }
         const calculatedTotal = calculatedSubtotal + calculatedShipping;
         if (Math.abs(calculatedTotal - total) > 1) {
@@ -270,7 +272,7 @@ const verifyPayment = async (req, res) => {
                     const htmlMessage = `
             <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 10px; overflow: hidden; background-color: #ffffff;">
               <div style="background-color: #111827; padding: 30px; text-align: center;">
-                <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase;">Luxy Galleria</h1>
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase;">Genesis by Preethy</h1>
               </div>
               <div style="padding: 40px 30px;">
                 <h2 style="color: #111827; font-size: 20px; margin-top: 0; margin-bottom: 20px;">Order Confirmation</h2>
@@ -321,13 +323,13 @@ const verifyPayment = async (req, res) => {
                 </div>
               </div>
               <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #eaeaea;">
-                <p style="color: #9ca3af; font-size: 13px; margin: 0;">© ${new Date().getFullYear()} Luxy Galleria. All rights reserved.</p>
+                <p style="color: #9ca3af; font-size: 13px; margin: 0;">© ${new Date().getFullYear()} Genesis by Preethy. All rights reserved.</p>
               </div>
             </div>
           `;
                     await (0, sendEmail_1.sendEmail)({
                         email: req.user.email,
-                        subject: 'Order Confirmation - Luxy Galleria',
+                        subject: 'Order Confirmation - Genesis by Preethy',
                         html: htmlMessage
                     });
                 }
@@ -398,26 +400,26 @@ const updateOrderStatus = async (req, res) => {
                 const autoLoginToken = jsonwebtoken_1.default.sign({ id: user._id, role: user.role || 'customer' }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
                 let statusColor = '#3b82f6'; // default blue
                 let statusMessage = "There is an update regarding your recent order.";
-                let subject = `Order Status Update - Luxy Galleria`;
+                let subject = `Order Status Update - Genesis by Preethy`;
                 if (orderStatus === 'processing') {
                     statusColor = '#f59e0b'; // orange
                     statusMessage = "Your order has been placed successfully and is now being processed.";
-                    subject = `Order Placed - Luxy Galleria`;
+                    subject = `Order Placed - Genesis by Preethy`;
                 }
                 else if (orderStatus === 'shipped') {
                     statusColor = '#3b82f6'; // blue
                     statusMessage = "Great news! Your order has been shipped and is on its way to you.";
-                    subject = `Order Shipped - Luxy Galleria`;
+                    subject = `Order Shipped - Genesis by Preethy`;
                 }
                 else if (orderStatus === 'delivered') {
                     statusColor = '#10b981'; // green
                     statusMessage = "Your order has been delivered successfully. We hope you enjoy your purchase!";
-                    subject = `Order Delivered - Luxy Galleria`;
+                    subject = `Order Delivered - Genesis by Preethy`;
                 }
                 else if (orderStatus === 'cancelled') {
                     statusColor = '#ef4444'; // red
                     statusMessage = "Your order has been cancelled. If you have been charged, a refund will be initiated shortly.";
-                    subject = `Order Cancelled - Luxy Galleria`;
+                    subject = `Order Cancelled - Genesis by Preethy`;
                 }
                 const itemsHtml = order.items.map((item) => {
                     const product = item.product;
@@ -436,7 +438,7 @@ const updateOrderStatus = async (req, res) => {
                 const htmlMessage = `
             <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 10px; overflow: hidden; background-color: #ffffff;">
               <div style="background-color: #111827; padding: 30px; text-align: center;">
-                <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase;">Luxy Galleria</h1>
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 2px; text-transform: uppercase;">Genesis by Preethy</h1>
               </div>
               <div style="padding: 40px 30px;">
                 <h2 style="color: #111827; font-size: 20px; margin-top: 0; margin-bottom: 20px;">Order Status Update</h2>
@@ -484,14 +486,14 @@ const updateOrderStatus = async (req, res) => {
                 </div>
 
                 <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 30px;">
-                  Thank you for shopping with Luxy Galleria. If you have any questions, feel free to reply to this email.
+                  Thank you for shopping with Genesis by Preethy. If you have any questions, feel free to reply to this email.
                 </p>
                 <div style="text-align: center;">
                   <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/profile?token=${autoLoginToken}" style="background-color: #111827; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">View Order History</a>
                 </div>
               </div>
               <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #eaeaea;">
-                <p style="color: #9ca3af; font-size: 13px; margin: 0;">© ${new Date().getFullYear()} Luxy Galleria. All rights reserved.</p>
+                <p style="color: #9ca3af; font-size: 13px; margin: 0;">© ${new Date().getFullYear()} Genesis by Preethy. All rights reserved.</p>
               </div>
             </div>
         `;

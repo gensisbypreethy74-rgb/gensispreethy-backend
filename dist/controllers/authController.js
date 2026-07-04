@@ -55,7 +55,7 @@ exports.createTestAdmin = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     if (env_1.ENV.NODE_ENV === 'production') {
         return (0, responseHandler_1.errorResponse)(res, 403, 'Cannot create test admin in production');
     }
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@luxygalleria.com';
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@genesisbypreethy.com';
     const adminPassword = process.env.ADMIN_PASSWORD || 'password123';
     const userExists = await User_1.User.findOne({ email: adminEmail }).select('+password');
     if (userExists) {

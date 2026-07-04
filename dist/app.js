@@ -8,6 +8,8 @@ const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 const env_1 = require("./config/env");
 const routes_1 = __importDefault(require("./routes"));
 const errorHandler_1 = require("./middlewares/errorHandler");
@@ -19,12 +21,13 @@ const app = (0, express_1.default)();
 // Security Middlewares
 // Helmet - sets various HTTP headers for security
 app.use((0, helmet_1.default)({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
             scriptSrc: ["'self'"],
-            imgSrc: ["'self'", 'data:', 'https:'],
+            imgSrc: ["'self'", 'data:', 'https:', 'http:', 'blob:'],
         },
     },
     hsts: {
@@ -43,8 +46,8 @@ const allowedOrigins = process.env.CORS_ORIGIN
         'http://localhost:3000/',
         'http://localhost:3001/',
         'http://localhost:3002/',
-        'https://luxygalleria-frontend.vercel.app',
-        'https://luxygalleria-admin.vercel.app',
+        'https://genesisboutique-frontend.vercel.app',
+        'https://genesisboutique-admin.vercel.app',
         'https://*.vercel.app', // Allow all Vercel preview deployments
     ];
 const corsConfig = {
@@ -75,7 +78,7 @@ app.options("*", (0, cors_1.default)(corsConfig));
 app.get('/', (req, res) => {
     res.status(200).json({
         success: true,
-        message: 'Luxy Galleria Backend is running ✅',
+        message: 'Genesis Boutique Backend is running ✅',
         timestamp: new Date().toISOString(),
         version: '1.0.0'
     });
@@ -96,6 +99,28 @@ app.use(sanitize_1.sanitizeInput);
 app.use(sanitize_1.sanitizeStrings);
 // Rate limiting - apply to all API routes
 app.use('/api/', rateLimiter_1.apiLimiter);
+// Log bad requests to api_error_logs.txt
+app.use((req, res, next) => {
+    res.on('finish', () => {
+        if (res.statusCode >= 400) {
+            try {
+                const logFilePath = path_1.default.join(__dirname, '../api_error_logs.txt');
+                const logMessage = `
+[${new Date().toISOString()}] RESPONDED: ${req.method} ${req.originalUrl} -> Status ${res.statusCode}
+Headers: ${JSON.stringify(req.headers, null, 2)}
+Query: ${JSON.stringify(req.query, null, 2)}
+Body: ${JSON.stringify(req.body, null, 2)}
+--------------------------------------------------------------------------------
+`;
+                fs_1.default.appendFileSync(logFilePath, logMessage);
+            }
+            catch (logErr) {
+                // ignore
+            }
+        }
+    });
+    next();
+});
 // Logger
 if (env_1.ENV.NODE_ENV === 'development') {
     app.use((0, morgan_1.default)('dev'));
@@ -110,7 +135,6 @@ else {
 }
 // API Routes
 app.use('/api/v1', routes_1.default);
-const path_1 = __importDefault(require("path"));
 app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../uploads')));
 // 404 Handler
 app.use(notFoundHandler_1.notFoundHandler);

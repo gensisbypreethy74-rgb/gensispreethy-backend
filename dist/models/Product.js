@@ -39,6 +39,7 @@ const variantSchema = new mongoose_1.Schema({
     volume: { type: String, required: true },
     price: { type: Number, required: true },
     oldPrice: { type: Number },
+    weight: { type: Number, default: 0 },
 });
 const productSchema = new mongoose_1.Schema({
     name: { type: String, required: true, trim: true },

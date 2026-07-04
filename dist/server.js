@@ -12,6 +12,7 @@ const startServer = async () => {
         // Connect to database
         await (0, db_1.connectDB)();
         // Ensure a default admin is available in development
+        // Reload trigger comment
         await (0, seedAdmin_1.seedAdmin)();
         // Start Express Server
         app_1.default.listen(env_1.ENV.PORT, () => {

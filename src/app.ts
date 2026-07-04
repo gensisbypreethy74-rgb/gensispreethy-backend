@@ -3,6 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
+import fs from 'fs';
+import path from 'path';
 
 import { ENV } from './config/env';
 import apiRoutes from './routes';
@@ -106,9 +108,6 @@ app.use(sanitizeStrings);
 // Rate limiting - apply to all API routes
 app.use('/api/', apiLimiter);
 
-import fs from 'fs';
-import path from 'path';
-
 // Log bad requests to api_error_logs.txt
 app.use((req, res, next) => {
   res.on('finish', () => {
@@ -145,7 +144,6 @@ if (ENV.NODE_ENV === 'development') {
 
 // API Routes
 app.use('/api/v1', apiRoutes);
-import path from 'path';
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // 404 Handler
