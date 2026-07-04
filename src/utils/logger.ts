@@ -13,7 +13,7 @@ const logFormat = winston.format.combine(
 const logger = winston.createLogger({
   level: ENV.NODE_ENV === 'production' ? 'info' : 'debug',
   format: logFormat,
-  defaultMeta: { service: 'luxygalleria-backend' },
+  defaultMeta: { service: 'genesis-boutique-backend' },
   transports: [
     // Write all logs with level 'error' and below to error.log
     new winston.transports.File({ 

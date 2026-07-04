@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const MONGO_URI = 'mongodb+srv://luxygalleria_db_user:edDnNHp379axfIo1@cluster0.vtzh76l.mongodb.net/luxy';
+const MONGO_URI = 'mongodb+srv://genesisbypreethy74_db_user:JNb6yeM07JDFXavL@cluster0.ztyi2yx.mongodb.net/genesis-boutique?retryWrites=true&w=majority';
 
 const videoTestimonialSchema = new mongoose.Schema(
   {

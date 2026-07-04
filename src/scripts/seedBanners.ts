@@ -6,7 +6,7 @@ dotenv.config();
 
 const seedBanners = async () => {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/luxy-galleria';
+    const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/luxy-galleria';
     await mongoose.connect(mongoUri);
     console.log('✅ Connected to MongoDB');
 

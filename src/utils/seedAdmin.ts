@@ -1,14 +1,14 @@
 import { User } from '../models/User';
 
 export const seedAdmin = async () => {
-  const existingAdmin = await User.findOne({ role: { $in: ['admin', 'superadmin'] } });
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@genesisbypreethy.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'password123';
+
+  const existingAdmin = await User.findOne({ email: adminEmail });
 
   if (existingAdmin) {
     return;
   }
-
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@luxygalleria.com';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'password123';
 
   await User.create({
     name: 'System Admin',

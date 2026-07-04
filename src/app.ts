@@ -17,12 +17,13 @@ const app: Application = express();
 // Security Middlewares
 // Helmet - sets various HTTP headers for security
 app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
-      imgSrc: ["'self'", 'data:', 'https:'],
+      imgSrc: ["'self'", 'data:', 'https:', 'http:', 'blob:'],
     },
   },
   hsts: {
@@ -42,8 +43,8 @@ const allowedOrigins = process.env.CORS_ORIGIN
       'http://localhost:3000/',
       'http://localhost:3001/',
       'http://localhost:3002/',
-      'https://luxygalleria-frontend.vercel.app',
-      'https://luxygalleria-admin.vercel.app',
+      'https://genesisboutique-frontend.vercel.app',
+      'https://genesisboutique-admin.vercel.app',
       'https://*.vercel.app', // Allow all Vercel preview deployments
     ];
 
@@ -79,7 +80,7 @@ app.options("*", cors(corsConfig));
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'Luxy Galleria Backend is running ✅',
+    message: 'Genesis Boutique Backend is running ✅',
     timestamp: new Date().toISOString(),
     version: '1.0.0'
   });
@@ -104,6 +105,31 @@ app.use(sanitizeStrings);
 
 // Rate limiting - apply to all API routes
 app.use('/api/', apiLimiter);
+
+import fs from 'fs';
+import path from 'path';
+
+// Log bad requests to api_error_logs.txt
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    if (res.statusCode >= 400) {
+      try {
+        const logFilePath = path.join(__dirname, '../api_error_logs.txt');
+        const logMessage = `
+[${new Date().toISOString()}] RESPONDED: ${req.method} ${req.originalUrl} -> Status ${res.statusCode}
+Headers: ${JSON.stringify(req.headers, null, 2)}
+Query: ${JSON.stringify(req.query, null, 2)}
+Body: ${JSON.stringify(req.body, null, 2)}
+--------------------------------------------------------------------------------
+`;
+        fs.appendFileSync(logFilePath, logMessage);
+      } catch (logErr) {
+        // ignore
+      }
+    }
+  });
+  next();
+});
 
 // Logger
 if (ENV.NODE_ENV === 'development') {

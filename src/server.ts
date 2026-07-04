@@ -9,6 +9,7 @@ const startServer = async () => {
     await connectDB();
 
     // Ensure a default admin is available in development
+// Reload trigger comment
     await seedAdmin();
 
     // Start Express Server

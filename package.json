@@ -1,5 +1,5 @@
 {
-  "name": "luxygalleria-backend",
+  "name": "genesis-boutique-backend",
   "version": "1.0.0",
   "description": "Professional backend for Luxy Galleria e-commerce platform",
   "main": "dist/server.js",
