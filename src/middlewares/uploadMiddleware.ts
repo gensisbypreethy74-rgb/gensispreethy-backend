@@ -28,7 +28,7 @@ if (isCloudinaryConfigured) {
     params: async (req, file) => {
       return {
         folder: 'genesis_boutique_products', // Cloudinary folder name
-        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'avif'],
         public_id: file.fieldname + '-' + Date.now(),
       };
     },
