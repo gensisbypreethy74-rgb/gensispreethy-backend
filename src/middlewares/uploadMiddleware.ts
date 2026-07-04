@@ -26,6 +26,7 @@ if (isCloudinaryConfigured) {
   storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: async (req, file) => {
+      return {
         folder: 'genesis_boutique_products', // Cloudinary folder name
         allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
         public_id: file.fieldname + '-' + Date.now(),
