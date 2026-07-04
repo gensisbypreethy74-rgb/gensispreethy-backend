@@ -1,4 +1,5 @@
 import rateLimit from 'express-rate-limit';
+import { ENV } from '../config/env';
 
 // General API rate limiter
 export const apiLimiter = rateLimit({
@@ -7,7 +8,7 @@ export const apiLimiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'development',
+  skip: () => ENV.NODE_ENV === 'development',
 });
 
 // Strict rate limiter for authentication endpoints
@@ -18,7 +19,7 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful requests
-  skip: () => process.env.NODE_ENV === 'development',
+  skip: () => ENV.NODE_ENV === 'development',
 });
 
 // OTP rate limiter
@@ -28,7 +29,7 @@ export const otpLimiter = rateLimit({
   message: 'Too many OTP requests. Please try again after 1 hour.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'development',
+  skip: () => ENV.NODE_ENV === 'development',
 });
 
 // Payment rate limiter
@@ -38,7 +39,7 @@ export const paymentLimiter = rateLimit({
   message: 'Too many payment requests. Please slow down.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'development',
+  skip: () => ENV.NODE_ENV === 'development',
 });
 
 // File upload rate limiter
@@ -48,5 +49,5 @@ export const uploadLimiter = rateLimit({
   message: 'Too many file uploads. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'development',
+  skip: () => ENV.NODE_ENV === 'development',
 });
