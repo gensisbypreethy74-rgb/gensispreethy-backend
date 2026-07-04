@@ -7,6 +7,7 @@ import { Settings } from '../models/Settings';
 import { sendEmail } from '../utils/sendEmail';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
+import { ENV } from '../config/env';
 dotenv.config();
 
 const razorpayInstance = new Razorpay({
@@ -110,12 +111,26 @@ export const createOrder = async (req: Request, res: Response) => {
       };
       isMock = true;
     } else {
-      const options = {
-        amount: Math.round(total * 100),
-        currency: "INR",
-        receipt: `receipt_order_${Date.now()}`
-      };
-      razorpayOrder = await razorpayInstance.orders.create(options);
+      try {
+        const options = {
+          amount: Math.round(total * 100),
+          currency: "INR",
+          receipt: `receipt_order_${Date.now()}`
+        };
+        razorpayOrder = await razorpayInstance.orders.create(options);
+      } catch (razorpayError: any) {
+        console.warn("Razorpay API call failed. Falling back to Mock Order in development mode. Error:", razorpayError.message || razorpayError);
+        if (ENV.NODE_ENV === 'development') {
+          razorpayOrder = {
+            id: `mock_order_${Date.now()}`,
+            amount: Math.round(total * 100),
+            currency: 'INR'
+          };
+          isMock = true;
+        } else {
+          throw razorpayError;
+        }
+      }
     }
 
     // No DB save here — order saved only after payment verified
