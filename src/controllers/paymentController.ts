@@ -120,12 +120,17 @@ export const createOrder = async (req: Request, res: Response) => {
         razorpayOrder = await razorpayInstance.orders.create(options);
       } catch (razorpayError: any) {
         console.warn("Razorpay API call failed. Falling back to Mock Order. Error:", razorpayError.message || razorpayError);
-        razorpayOrder = {
-          id: `mock_order_${Date.now()}`,
-          amount: Math.round(total * 100),
-          currency: 'INR'
-        };
-        isMock = true;
+        const isTestKey = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_ID.startsWith('rzp_test_');
+        if (ENV.NODE_ENV === 'development' || isTestKey) {
+          razorpayOrder = {
+            id: `mock_order_${Date.now()}`,
+            amount: Math.round(total * 100),
+            currency: 'INR'
+          };
+          isMock = true;
+        } else {
+          throw razorpayError;
+        }
       }
     }
 
