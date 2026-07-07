@@ -4,15 +4,18 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { successResponse, errorResponse } from '../utils/responseHandler';
 
 export const createProduct = asyncHandler(async (req: Request, res: Response) => {
-  if (req.files && Array.isArray(req.files)) {
-    const fileUrls = req.files.map(file => file.path);
-    
-    // Parse the stringified arrays/objects from formData if necessary
+  // Normalize req.body.images to array if present
+  if (req.body.images) {
     if (typeof req.body.images === 'string') {
       req.body.images = [req.body.images];
     }
-    
-    req.body.images = [...(req.body.images || []), ...fileUrls];
+  } else {
+    req.body.images = [];
+  }
+
+  if (req.files && Array.isArray(req.files)) {
+    const fileUrls = req.files.map(file => file.path);
+    req.body.images = [...req.body.images, ...fileUrls];
   }
 
   // Handle variants parsing if sent as a string (from FormData)
@@ -39,12 +42,18 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response) =>
     return errorResponse(res, 404, 'Product not found');
   }
   
-  if (req.files && Array.isArray(req.files)) {
-    const fileUrls = req.files.map(file => file.path);
+  // Normalize req.body.images to array if present
+  if (req.body.images) {
     if (typeof req.body.images === 'string') {
       req.body.images = [req.body.images];
     }
-    req.body.images = [...(req.body.images || []), ...fileUrls];
+  } else {
+    req.body.images = [];
+  }
+
+  if (req.files && Array.isArray(req.files)) {
+    const fileUrls = req.files.map(file => file.path);
+    req.body.images = [...req.body.images, ...fileUrls];
   }
 
   if (typeof req.body.variants === 'string') {
