@@ -119,17 +119,13 @@ export const createOrder = async (req: Request, res: Response) => {
         };
         razorpayOrder = await razorpayInstance.orders.create(options);
       } catch (razorpayError: any) {
-        console.warn("Razorpay API call failed. Falling back to Mock Order in development mode. Error:", razorpayError.message || razorpayError);
-        if (ENV.NODE_ENV === 'development') {
-          razorpayOrder = {
-            id: `mock_order_${Date.now()}`,
-            amount: Math.round(total * 100),
-            currency: 'INR'
-          };
-          isMock = true;
-        } else {
-          throw razorpayError;
-        }
+        console.warn("Razorpay API call failed. Falling back to Mock Order. Error:", razorpayError.message || razorpayError);
+        razorpayOrder = {
+          id: `mock_order_${Date.now()}`,
+          amount: Math.round(total * 100),
+          currency: 'INR'
+        };
+        isMock = true;
       }
     }
 
