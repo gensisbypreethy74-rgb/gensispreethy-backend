@@ -12,7 +12,6 @@ const Settings_1 = require("../models/Settings");
 const sendEmail_1 = require("../utils/sendEmail");
 const dotenv_1 = __importDefault(require("dotenv"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const env_1 = require("../config/env");
 dotenv_1.default.config();
 const razorpayInstance = new razorpay_1.default({
     key_id: process.env.RAZORPAY_KEY_ID || 'dummy_key_id',
@@ -113,8 +112,9 @@ const createOrder = async (req, res) => {
                 razorpayOrder = await razorpayInstance.orders.create(options);
             }
             catch (razorpayError) {
-                console.warn("Razorpay API call failed. Falling back to Mock Order in development mode. Error:", razorpayError.message || razorpayError);
-                if (env_1.ENV.NODE_ENV === 'development') {
+                console.warn("Razorpay API call failed. Falling back to Mock Order. Error:", razorpayError.message || razorpayError);
+                const isLiveKey = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_ID.startsWith('rzp_live_');
+                if (!isLiveKey) {
                     razorpayOrder = {
                         id: `mock_order_${Date.now()}`,
                         amount: Math.round(total * 100),
